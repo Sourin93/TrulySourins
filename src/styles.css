@@ -1,0 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  /* Premium Dark Theme Palette */
+  --bg-app: #0f172a;
+  --bg-card: #1e293b;
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --accent: #ec4899;
+
+  --status-want: #3b82f6;
+  --status-reading: #f59e0b;
+  --status-completed: #10b981;
+  --status-lent: #a855f7;
+
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+  --radius: 12px;
+}
+
+/* ===================== */
+/* PREMIUM BACKGROUND    */
+/* ===================== */
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
+
+  /* Radial ambient light blobs */
+  background-image:
+    /* Top-left indigo blob */
+    radial-gradient(ellipse 60% 50% at 10% 0%, rgba(99, 102, 241, 0.18) 0%, transparent 70%),
+    /* Top-right pink blob */
+    radial-gradient(ellipse 50% 40% at 90% 5%, rgba(236, 72, 153, 0.13) 0%, transparent 65%),
+    /* Bottom-center purple blob */
+    radial-gradient(ellipse 70% 40% at 50% 100%, rgba(168, 85, 247, 0.12) 0%, transparent 70%),
+    /* Subtle dot grid */
+    radial-gradient(circle, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
+
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    28px 28px;
+
+  background-attachment: fixed;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+/* ======================== */
+/* GLOBAL LAYOUT UTILITIES  */
+/* ======================== */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-weight: 500;
+  background: var(--bg-card);
+  color: var(--text-main);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #818cf8);
+  color: white;
+  border: none;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+}
+
+.icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  vertical-align: middle;
+}
