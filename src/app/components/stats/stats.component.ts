@@ -286,10 +286,17 @@ interface StatItem {
     .hbar-fill { height: 100%; border-radius: 100px; transition: width 0.6s cubic-bezier(.4,0,.2,1); min-width: 4px; }
     .hbar-val { width: 28px; text-align: right; font-size: 0.875rem; font-weight: 700; flex-shrink: 0; }
 
-    @media (max-width: 520px) {
-      .chart-card { padding: 1.5rem 1.25rem; gap: 1.5rem; justify-content: center; }
-      .legend { width: 100%; }
+    @media (max-width: 600px) {
+      .chart-card { flex-direction: column; align-items: center; padding: 1.5rem 1rem; gap: 1.5rem; text-align: center; }
+      .legend { width: 100%; align-items: center; }
+      .legend-item { justify-content: center; width: 100%; max-width: 250px; }
       .hbar-label { width: 100px; font-size: 0.8rem; }
+      .donut-wrap { width: 150px; height: 150px; }
+      h1 { font-size: 1.6rem; }
+      .empty-icon { font-size: 2.5rem; }
+    }
+    @media (max-width: 400px) {
+      .top-author-card { flex-direction: column; text-align: center; gap: 0.5rem; }
     }
     /* Author section */
     .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }

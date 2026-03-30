@@ -381,8 +381,27 @@ import { LanguageService } from '../../services/language.service';
     /* Book Grid */
     .book-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
       gap: 1.5rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      .header { gap: 0.75rem; margin-bottom: 1.5rem; }
+      .search-wrap { min-width: 180px; }
+      .adv-filters { gap: 0.5rem; padding: 0.75rem; }
+      .filter-group { min-width: 45%; }
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 1.6rem; }
+      .header { flex-direction: column; align-items: stretch; }
+      .header-left { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 0.5rem; }
+      .search-wrap { flex: none; width: 100%; }
+      .btn-primary { width: 100%; text-align: center; justify-content: center; }
+      .filter-group, .page-size-group { min-width: 100%; }
+      .clear-all-btn { width: 100%; justify-content: center; }
+      .adv-filters { padding: 1rem 0.75rem; }
     }
 
     /* Empty State */

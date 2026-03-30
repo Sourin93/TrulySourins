@@ -29,15 +29,15 @@ import { LanguageService } from '../../services/language.service';
         <div class="nav-links">
           <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.614L6.295 8.235a.75.75 0 1 0-1.09 1.03l4.25 4.5a.75.75 0 0 0 1.09 0l4.25-4.5a.75.75 0 0 0-1.09-1.03l-2.955 3.129V2.75Z" /><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z" /></svg>
-            {{ langService.t('nav.library') }}
+            <span>{{ langService.t('nav.library') }}</span>
           </a>
           <a routerLink="/add" routerLinkActive="active" class="nav-link">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10.75 4.75a.75.75 0 0 0-1.5 0v4.5h-4.5a.75.75 0 0 0 0 1.5h4.5v4.5a.75.75 0 0 0 1.5 0v-4.5h4.5a.75.75 0 0 0 0-1.5h-4.5v-4.5Z" /></svg>
-            {{ langService.t('nav.addBook') }}
+            <span>{{ langService.t('nav.addBook') }}</span>
           </a>
           <a routerLink="/stats" routerLinkActive="active" class="nav-link">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M15.5 2A1.5 1.5 0 0 0 14 3.5v13a1.5 1.5 0 0 0 3 0v-13A1.5 1.5 0 0 0 15.5 2ZM9.5 6A1.5 1.5 0 0 0 8 7.5v9a1.5 1.5 0 0 0 3 0v-9A1.5 1.5 0 0 0 9.5 6ZM3.5 10A1.5 1.5 0 0 0 2 11.5v5a1.5 1.5 0 0 0 3 0v-5A1.5 1.5 0 0 0 3.5 10Z"/></svg>
-            {{ langService.t('nav.statistics') }}
+            <span>{{ langService.t('nav.statistics') }}</span>
           </a>
         </div>
 
@@ -666,15 +666,25 @@ import { LanguageService } from '../../services/language.service';
     }
 
     /* ── Responsive ── */
-    @media (max-width: 700px) {
+    @media (max-width: 800px) {
       .nav-inner { gap: 0.75rem; padding: 0 1rem; }
       .brand-name { display: none; }
       .nav-stats  { display: none; }
       .tool-label { display: none; }
       .notif-panel { width: calc(100vw - 2rem); right: -1rem; }
     }
-    @media (max-width: 480px) {
+    @media (max-width: 580px) {
       .nav-link span { display: none; }
+      .nav-link { padding: 0.42rem 0.6rem; }
+      .tool-btn { width: 32px; height: 32px; }
+      .strip-sep { display: none; }
+      .nav-inner { justify-content: space-between; gap: 0.25rem; padding: 0 0.5rem; }
+    }
+    @media (max-width: 480px) {
+      .manual-btn, .export-btn { display: none; }
+      .tool-divider:nth-child(2), .tool-divider:nth-child(4) { display: none; }
+      .tool-group .import-btn { border-radius: 9px; }
+      .lang-toggle { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
     }
   `]
 })
