@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { BookService } from './book.service';
 import { Book } from '../models/book.model';
 import { GoogleGenAI, Type } from '@google/genai';
@@ -12,6 +12,7 @@ export interface ChatMessage {
 @Injectable({ providedIn: 'root' })
 export class ChatbotService {
     private bookService = inject(BookService);
+    isOfflineMode = signal(false);
 
     get hasApiKey(): boolean {
         return !!localStorage.getItem('gemini_api_key');
@@ -27,6 +28,10 @@ export class ChatbotService {
 
     /** Process a user message and return a bot reply */
     async getReply(input: string, chatHistory: ChatMessage[]): Promise<string> {
+        if (this.isOfflineMode()) {
+            return this.getOfflineReply(input);
+        }
+
         const apiKey = localStorage.getItem('gemini_api_key');
         if (!apiKey) {
             return 'Please provide your Gemini API key to use the chat assistant.';
@@ -199,5 +204,50 @@ ${libraryContext}`;
             }
             return "⚠️ I encountered an error while trying to think of a response. Please try again later.";
         }
+    }
+
+    private getOfflineReply(input: string): string {
+        const lower = input.toLowerCase();
+        const books = this.bookService.books();
+
+        if (books.length === 0) {
+            return "Your library is currently empty. Add some books first!";
+        }
+
+        if (lower.includes('how many') || lower.includes('total') || lower.includes('count')) {
+            return `You currently have **${books.length} books** in your library.`;
+        }
+
+        if (lower.includes('reading') || lower.includes('currently reading')) {
+            const reading = books.filter(b => b.status === 'Reading');
+            if (reading.length === 0) return "You aren't reading any books right now.";
+            return "You are currently reading:\n" + reading.map(b => `- **${b.title}** by ${b.author}`).join('\n');
+        }
+
+        if (lower.includes('lent') || lower.includes('borrowed by') || lower.includes('given')) {
+            const lent = books.filter(b => b.status === 'Lent Out');
+            if (lent.length === 0) return "You haven't lent out any books.";
+            return "Books you have lent out:\n" + lent.map(b => `- **${b.title}** to ${b.borrowedBy || 'Unknown'}`).join('\n');
+        }
+
+        if (lower.includes('borrowed from') || lower.includes('i borrowed')) {
+            const borrowed = books.filter(b => b.status === 'Borrowed');
+            if (borrowed.length === 0) return "You haven't borrowed any books.";
+            return "Books you have borrowed:\n" + borrowed.map(b => `- **${b.title}** from ${b.borrowedFrom || 'Unknown'}`).join('\n');
+        }
+
+        if (lower.includes('recommend') || lower.includes('read next') || lower.includes('what should i read')) {
+            const unread = books.filter(b => b.status === 'Yet to Read' || b.status === 'Wishlist');
+            if (unread.length === 0) return "You have no unread books! Maybe it's time to add some to your Wishlist.";
+            const randomBook = unread[Math.floor(Math.random() * unread.length)];
+            return `I recommend diving into **${randomBook.title}** by ${randomBook.author}. It is currently in your ${randomBook.status} list!`;
+        }
+
+        if (lower.includes('finished') || lower.includes('completed')) {
+            const completed = books.filter(b => b.status === 'Completed');
+            return `You have successfully completed **${completed.length} books**! Excellent work!`;
+        }
+
+        return "I'm currently in **📴 Offline Mode**, so I only understand simple questions like:\n- *'How many books do I have?'*\n- *'What am I reading?'*\n- *'Who did I lend books to?'*\n- *'Recommend a book'*.\n\nSwitch to **AI Mode** to ask me anything complex!";
     }
 }

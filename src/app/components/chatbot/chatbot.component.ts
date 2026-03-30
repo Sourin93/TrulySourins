@@ -52,6 +52,15 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
           </div>
         </div>
         <div class="chat-header-right">
+          <!-- Mode Toggle -->
+          <div class="mode-toggle" (click)="toggleMode()" title="Toggle Offline/AI Mode">
+            <span class="mode-label" [class.active]="!chatbot.isOfflineMode()">🤖</span>
+            <div class="mode-track" [class.offline]="chatbot.isOfflineMode()">
+              <div class="mode-thumb"></div>
+            </div>
+            <span class="mode-label" [class.active]="chatbot.isOfflineMode()">📴</span>
+          </div>
+
           <!-- Clear history -->
           <button class="chat-clear-btn" (click)="clearHistory()" aria-label="Clear chat history" title="Clear chat">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -68,7 +77,7 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
       </div>
 
       <!-- API Key Setup -->
-      <div class="api-key-setup" *ngIf="!chatbot.hasApiKey">
+      <div class="api-key-setup" *ngIf="!chatbot.hasApiKey && !chatbot.isOfflineMode()">
         <div class="api-key-header">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
             <path fill-rule="evenodd" d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z" clip-rule="evenodd" />
@@ -88,7 +97,7 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
         <a href="https://aistudio.google.com/app/apikey" target="_blank" class="help-link">Get an API key</a>
       </div>
 
-      <ng-container *ngIf="chatbot.hasApiKey">
+      <ng-container *ngIf="chatbot.hasApiKey || chatbot.isOfflineMode()">
         <!-- Messages -->
         <div class="chat-messages" #messageContainer>
           <div *ngFor="let msg of messages()" class="msg-row" [class.user-row]="msg.role === 'user'">
@@ -300,6 +309,45 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
     .chat-close svg, .chat-clear-btn svg { width: 14px; height: 14px; }
     .chat-close:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
     .chat-clear-btn:hover { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+
+    /* ── Mode Toggle ── */
+    .mode-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      cursor: pointer;
+      margin-right: 0.25rem;
+      background: rgba(0,0,0,0.15);
+      padding: 0.25rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+    .mode-label {
+      font-size: 0.8rem;
+      opacity: 0.4;
+      transition: opacity 0.2s;
+    }
+    .mode-label.active { opacity: 1; }
+    .mode-track {
+      width: 28px;
+      height: 14px;
+      background: #8b5cf6;
+      border-radius: 100px;
+      position: relative;
+      transition: background 0.3s;
+    }
+    .mode-track.offline { background: #64748b; }
+    .mode-thumb {
+      width: 10px;
+      height: 10px;
+      background: #fff;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+    }
+    .mode-track.offline .mode-thumb { transform: translateX(14px); }
 
     /* ── API Key Setup ── */
     .api-key-setup {
@@ -567,8 +615,11 @@ export class ChatbotComponent implements AfterViewChecked {
   toggleChat() {
     this.isOpen.update(v => !v);
     if (this.isOpen() && this.messages().length === 0) {
-      // Welcome message
-      this.pushBotMessage(`Hi! 👋 I'm your **Library Assistant**. I can tell you about your books, reading stats, overdue loans, and give you recommendations.\n\nTry asking: _"What am I reading?"_ or _"Recommend something"_`);
+      if (this.chatbot.isOfflineMode()) {
+        this.pushBotMessage(`📴 **Offline Mode** active. I can instantly answer simple questions about your library like:\n\n_"How many books do I have?"_\n_"What am I reading?"_`);
+      } else {
+        this.pushBotMessage(`Hi! 👋 I'm your **Library Assistant** (Powered by Gemini AI). I can tell you about your books, reading stats, overdue loans, and give you recommendations.\n\nTry asking: _"What am I reading?"_ or _"Recommend something"_`);
+      }
     }
     if (this.isOpen()) {
       setTimeout(() => this.inputEl?.nativeElement.focus(), 300);
@@ -583,11 +634,29 @@ export class ChatbotComponent implements AfterViewChecked {
       this.chatbot.removeApiKey();
     }
 
-    if (this.chatbot.hasApiKey) {
-      // Show fresh welcome message if API key still exists
-      this.pushBotMessage(`Hi! 👋 I'm your **Library Assistant**. I can tell you about your books, reading stats, overdue loans, and give you recommendations.\n\nTry asking: _"What am I reading?"_ or _"Recommend something"_`);
+    if (this.chatbot.hasApiKey || this.chatbot.isOfflineMode()) {
+      if (this.chatbot.isOfflineMode()) {
+        this.pushBotMessage(`📴 **Offline Mode** active. I can instantly answer simple questions about your library like:\n\n_"How many books do I have?"_\n_"What am I reading?"_`);
+      } else {
+        this.pushBotMessage(`Hi! 👋 I'm your **Library Assistant** (Powered by Gemini AI). I can tell you about your books, reading stats, overdue loans, and give you recommendations.\n\nTry asking: _"What am I reading?"_ or _"Recommend something"_`);
+      }
       setTimeout(() => this.inputEl?.nativeElement.focus(), 50);
     }
+  }
+
+  toggleMode() {
+    this.chatbot.isOfflineMode.set(!this.chatbot.isOfflineMode());
+    this.messages.set([]);
+    this.isTyping.set(false);
+
+    if (this.chatbot.isOfflineMode()) {
+      this.pushBotMessage(`📴 **Offline Mode** activated. I can answer simple rule-based questions about your library right now without an API key.\n\nTry asking: _"How many books do I have?"_`);
+    } else {
+      if (this.chatbot.hasApiKey) {
+        this.pushBotMessage(`🤖 **AI Mode** activated. I'm connected to Google Gemini!\n\nTry asking: _"Recommend a fiction book"_`);
+      }
+    }
+    setTimeout(() => this.inputEl?.nativeElement.focus(), 50);
   }
 
   saveApiKey() {
