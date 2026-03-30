@@ -4,6 +4,7 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { BookService } from '../../services/book.service';
 import { Router, ActivatedRoute } from '@angular/router';
 import { BookCategory, BookLanguage, BookGenre } from '../../models/book.model';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-edit-book',
@@ -11,38 +12,38 @@ import { BookCategory, BookLanguage, BookGenre } from '../../models/book.model';
   imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="edit-book-container">
-      <h2>Edit Book</h2>
+      <h2>{{ langService.t('form.editTitle') }}</h2>
 
       <div *ngIf="!found" class="not-found">
-        <p>Book not found.</p>
-        <button class="btn btn-primary" (click)="onCancel()">Back to Library</button>
+        <p>{{ langService.t('form.notFound') }}</p>
+        <button class="btn btn-primary" (click)="onCancel()">{{ langService.t('form.backToLib') }}</button>
       </div>
 
       <form *ngIf="found" [formGroup]="bookForm" (ngSubmit)="onSubmit()">
 
         <div class="form-row">
           <div class="form-group">
-            <label for="title">Title <span class="req">*</span></label>
+            <label for="title">{{ langService.t('form.titleField') }} <span class="req">*</span></label>
             <input id="title" type="text" formControlName="title" placeholder="e.g. The Hobbit">
-            <div class="error" *ngIf="bookForm.get('title')?.touched && bookForm.get('title')?.invalid">Title is required</div>
+            <div class="error" *ngIf="bookForm.get('title')?.touched && bookForm.get('title')?.invalid">{{ langService.t('form.errTitle') }}</div>
           </div>
           <div class="form-group">
-            <label for="author">Author <span class="req">*</span></label>
+            <label for="author">{{ langService.t('form.authorField') }} <span class="req">*</span></label>
             <input id="author" type="text" formControlName="author" placeholder="e.g. J.R.R. Tolkien">
-            <div class="error" *ngIf="bookForm.get('author')?.touched && bookForm.get('author')?.invalid">Author is required</div>
+            <div class="error" *ngIf="bookForm.get('author')?.touched && bookForm.get('author')?.invalid">{{ langService.t('form.errAuthor') }}</div>
           </div>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="category">Category <span class="optional">(optional)</span></label>
+            <label for="category">{{ langService.t('form.categoryField') }} <span class="optional">({{ langService.t('form.optional') }})</span></label>
             <select id="category" formControlName="category">
               <option value="">— Select category —</option>
               <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="language">Language <span class="optional">(optional)</span></label>
+            <label for="language">{{ langService.t('form.languageField') }} <span class="optional">({{ langService.t('form.optional') }})</span></label>
             <select id="language" formControlName="language">
               <option value="">— Select language —</option>
               <option *ngFor="let l of languages" [value]="l">{{ l }}</option>
@@ -52,44 +53,61 @@ import { BookCategory, BookLanguage, BookGenre } from '../../models/book.model';
 
         <div class="form-row">
           <div class="form-group">
-            <label for="genre">Genre <span class="optional">(optional)</span></label>
+            <label for="genre">{{ langService.t('form.genreField') }} <span class="optional">({{ langService.t('form.optional') }})</span></label>
             <select id="genre" formControlName="genre">
               <option value="">— Select genre —</option>
               <option *ngFor="let g of genres" [value]="g">{{ g }}</option>
             </select>
           </div>
           <div class="form-group">
-            <label for="status">Status</label>
+            <label for="status">{{ langService.t('form.statusField') }}</label>
             <select id="status" formControlName="status">
-              <option value="Yet to Read">Yet to Read</option>
-              <option value="Reading">Reading</option>
-              <option value="Completed">Completed</option>
-              <option value="Lent Out">Lent Out</option>
-              <option value="Wishlist">Wishlist 🛒</option>
+              <option value="Yet to Read">{{ langService.t('form.optYetToRead') }}</option>
+              <option value="Reading">{{ langService.t('form.optReading') }}</option>
+              <option value="Completed">{{ langService.t('form.optCompleted') }}</option>
+              <option value="Lent Out">{{ langService.t('form.optLentOut') }}</option>
+              <option value="Borrowed">{{ langService.t('form.optBorrowed') }}</option>
+              <option value="Wishlist">{{ langService.t('form.optWishlist') }}</option>
             </select>
           </div>
           <div class="form-group">
             <label for="lentDate">
-              {{ isLentOut ? 'Date Lent' : 'Date' }}
-              <span class="optional" *ngIf="!isLentOut">(optional)</span>
+              {{ isLentOut ? langService.t('form.dateLent') : (isBorrowed ? langService.t('form.dateBorrowed') : langService.t('form.date')) }}
+              <span class="optional" *ngIf="!isLentOut && !isBorrowed">({{ langService.t('form.optional') }})</span>
             </label>
             <input id="lentDate" type="date" formControlName="lentDate">
-            <div class="error" *ngIf="bookForm.get('lentDate')?.touched && bookForm.get('lentDate')?.invalid">Date is required for lent books</div>
+            <div class="error" *ngIf="bookForm.get('lentDate')?.touched && bookForm.get('lentDate')?.invalid">{{ langService.t('form.errDate') }}</div>
           </div>
         </div>
 
-        <div class="form-group" *ngIf="isLentOut">
-          <label for="borrowedBy">Borrowed by <span class="req">*</span></label>
-          <input id="borrowedBy" type="text" formControlName="borrowedBy" placeholder="Enter the person's name">
-          <div class="error" *ngIf="bookForm.get('borrowedBy')?.touched && bookForm.get('borrowedBy')?.invalid">Please enter the borrower's name</div>
+        <div class="form-group" *ngIf="isLentOut || isBorrowed">
+          <label [for]="isLentOut ? 'borrowedBy' : 'borrowedFrom'">
+            {{ isLentOut ? langService.t('form.lentTo') : langService.t('form.borrowedFrom') }} <span class="req">*</span>
+          </label>
+          <input
+            *ngIf="isLentOut"
+            id="borrowedBy"
+            type="text"
+            formControlName="borrowedBy"
+            placeholder="Enter the person's name">
+          <input
+            *ngIf="isBorrowed"
+            id="borrowedFrom"
+            type="text"
+            formControlName="borrowedFrom"
+            placeholder="Who did you borrow this from?">
+            
+          <div class="error" *ngIf="(bookForm.get('borrowedBy')?.touched && bookForm.get('borrowedBy')?.invalid) || (bookForm.get('borrowedFrom')?.touched && bookForm.get('borrowedFrom')?.invalid)">
+            {{ langService.t('form.errName') }}
+          </div>
         </div>
 
         <!-- Feedback — shown for Reading or Completed -->
         <div class="form-group feedback-group" *ngIf="showFeedback">
           <label for="feedback">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3.505 2.365A41.369 41.369 0 0 1 9 2c1.863 0 3.697.124 5.495.365 1.247.167 2.005 1.32 2.005 2.366V9.25c0 1.046-.76 2.2-2.009 2.366A41.215 41.215 0 0 1 9 12c-1.863 0-3.697-.124-5.495-.365C2.254 11.45 1.5 10.296 1.5 9.25V4.731c0-1.047.757-2.199 2.005-2.366ZM14 15.5a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 0 1h-1a.5.5 0 0 1-.5-.5Zm-9 0a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5Zm0 2a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 0 1h-4a.5.5 0 0 1-.5-.5Z"/></svg>
-            My Thoughts
-            <span class="optional">(optional)</span>
+            {{ langService.t('form.myThoughts') }}
+            <span class="optional">({{ langService.t('form.optional') }})</span>
           </label>
           <textarea
             id="feedback"
@@ -100,7 +118,7 @@ import { BookCategory, BookLanguage, BookGenre } from '../../models/book.model';
 
         <!-- Cover Image Upload -->
         <div class="form-group cover-group">
-          <label>Cover Image <span class="optional">(optional · max 200 KB)</span></label>
+          <label>{{ langService.t('form.coverImage') }} <span class="optional">({{ langService.t('form.optMaxSize') }})</span></label>
           <div class="cover-upload-row">
             <div class="cover-preview" *ngIf="coverPreview">
               <img [src]="coverPreview" alt="Cover preview" class="cover-thumb">
@@ -109,15 +127,15 @@ import { BookCategory, BookLanguage, BookGenre } from '../../models/book.model';
             <label class="upload-zone" [class.has-preview]="!!coverPreview">
               <input type="file" accept="image/*" (change)="onCoverFile($event)" class="file-input">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M1 5.25A2.25 2.25 0 0 1 3.25 3h13.5A2.25 2.25 0 0 1 19 5.25v9.5A2.25 2.25 0 0 1 16.75 17H3.25A2.25 2.25 0 0 1 1 14.75v-9.5Zm1.5 5.81v3.69c0 .414.336.75.75.75h13.5a.75.75 0 0 0 .75-.75v-2.69l-2.22-2.219a.75.75 0 0 0-1.06 0l-1.91 1.909-.48-.480a.75.75 0 0 0-1.06 0L6.53 15H3.25a.75.75 0 0 1-.75-.75V11.06Zm0-1.56l2.22-2.22a.75.75 0 0 1 1.06 0l1.908 1.908 1.483-1.482a.75.75 0 0 1 1.06 0l4.019 4.019V5.25a.75.75 0 0 0-.75-.75H3.25a.75.75 0 0 0-.75.75v4.06ZM12 7a1 1 0 1 1 2 0 1 1 0 0 1-2 0Z" clip-rule="evenodd"/></svg>
-              <span>{{ coverPreview ? 'Change image' : 'Click to upload' }}</span>
+              <span>{{ coverPreview ? langService.t('form.changeImage') : langService.t('form.clickUpload') }}</span>
             </label>
           </div>
           <div class="error" *ngIf="coverError">{{ coverError }}</div>
         </div>
 
         <div class="actions">
-          <button type="button" class="btn" (click)="onCancel()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="bookForm.invalid">Save Changes</button>
+          <button type="button" class="btn" (click)="onCancel()">{{ langService.t('form.cancel') }}</button>
+          <button type="submit" class="btn btn-primary" [disabled]="bookForm.invalid">{{ langService.t('form.saveChanges') }}</button>
         </div>
       </form>
     </div>
@@ -197,6 +215,7 @@ export class EditBookComponent implements OnInit {
   private bookService = inject(BookService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+  langService = inject(LanguageService);
 
   coverPreview: string | null = null;
   coverError: string | null = null;
@@ -216,12 +235,17 @@ export class EditBookComponent implements OnInit {
     language: [''],
     genre: [''],
     borrowedBy: [''],
+    borrowedFrom: [''],
     lentDate: [''],
     feedback: ['']
   });
 
   get isLentOut(): boolean {
     return this.bookForm.get('status')?.value === 'Lent Out';
+  }
+
+  get isBorrowed(): boolean {
+    return this.bookForm.get('status')?.value === 'Borrowed';
   }
 
   get showFeedback(): boolean {
@@ -243,6 +267,7 @@ export class EditBookComponent implements OnInit {
         language: book.language ?? '',
         genre: book.genre ?? '',
         borrowedBy: book.borrowedBy ?? '',
+        borrowedFrom: book.borrowedFrom ?? '',
         lentDate: book.lentDate ?? '',
         feedback: book.feedback ?? ''
       });
@@ -256,21 +281,31 @@ export class EditBookComponent implements OnInit {
 
   private updateLentValidators(status: string) {
     const borrowedByCtrl = this.bookForm.get('borrowedBy');
+    const borrowedFromCtrl = this.bookForm.get('borrowedFrom');
     const lentDateCtrl = this.bookForm.get('lentDate');
+
     if (status === 'Lent Out') {
       borrowedByCtrl?.setValidators(Validators.required);
       lentDateCtrl?.setValidators(Validators.required);
+      borrowedFromCtrl?.clearValidators();
+    } else if (status === 'Borrowed') {
+      borrowedFromCtrl?.setValidators(Validators.required);
+      lentDateCtrl?.setValidators(Validators.required);
+      borrowedByCtrl?.clearValidators();
     } else {
       borrowedByCtrl?.clearValidators();
+      borrowedFromCtrl?.clearValidators();
       lentDateCtrl?.clearValidators();
     }
+
     borrowedByCtrl?.updateValueAndValidity();
+    borrowedFromCtrl?.updateValueAndValidity();
     lentDateCtrl?.updateValueAndValidity();
   }
 
   onSubmit() {
     if (this.bookForm.valid) {
-      const { title, author, status, category, language, genre, borrowedBy, lentDate, feedback } = this.bookForm.value;
+      const { title, author, status, category, language, genre, borrowedBy, borrowedFrom, lentDate, feedback } = this.bookForm.value;
       this.bookService.updateBook(this.bookId, {
         title: title!,
         author: author!,
@@ -279,6 +314,7 @@ export class EditBookComponent implements OnInit {
         language: (language || undefined) as BookLanguage | undefined,
         genre: (genre || undefined) as BookGenre | undefined,
         borrowedBy: status === 'Lent Out' ? (borrowedBy ?? undefined) : undefined,
+        borrowedFrom: status === 'Borrowed' ? (borrowedFrom ?? undefined) : undefined,
         lentDate: lentDate || undefined,
         feedback: (feedback && this.showFeedback) ? feedback : undefined,
         coverUrl: this.coverPreview ?? undefined

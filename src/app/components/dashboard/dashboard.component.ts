@@ -1,10 +1,11 @@
-import { Component, inject, signal, computed, effect } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BookService } from '../../services/book.service';
 import { BookCardComponent } from '../book-card/book-card.component';
 import { Book, BookCategory, BookLanguage, BookGenre } from '../../models/book.model';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -14,8 +15,8 @@ import { FormsModule } from '@angular/forms';
     <div class="dashboard container">
       <header class="header">
         <div class="header-left">
-          <h1>My Library</h1>
-          <p class="subtitle">Track your reading journey</p>
+          <h1>{{ langService.t('dash.title') }}</h1>
+          <p class="subtitle">{{ langService.t('dash.subtitle') }}</p>
         </div>
 
         <!-- Search Bar -->
@@ -33,30 +34,42 @@ import { FormsModule } from '@angular/forms';
           <button class="clear-btn" *ngIf="searchQuery()" (click)="onSearch('')" title="Clear">&times;</button>
         </div>
 
-        <a routerLink="/add" class="btn btn-primary">+ Add Book</a>
+        <a routerLink="/add" class="btn btn-primary">{{ langService.t('dash.addBook') }}</a>
       </header>
 
       <!-- Status Filter Tabs -->
       <div class="filters">
         <button
-          *ngFor="let filter of statusFilters"
+          *ngFor="let filter of statusFilters(); let i = index"
           class="filter-tab"
-          [class.active]="activeStatus() === filter"
-          (click)="setStatus(filter)">
+          [class.active]="activeStatus() === STATUS_VALUES[i]"
+          (click)="setStatus(i)">
           {{ filter }}
         </button>
       </div>
 
       <!-- Advanced Filters Row -->
       <div class="adv-filters">
+        <!-- Author -->
+        <div class="filter-group">
+          <label class="filter-label">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M10 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM3.465 14.493a1.23 1.23 0 0 0 .41 1.412A9.957 9.957 0 0 0 10 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 0 0-13.074.003Z"/></svg>
+            {{ langService.t('dash.author') }}
+          </label>
+          <select class="filter-select" [ngModel]="authorFilter()" (ngModelChange)="setAuthor($event)">
+            <option value="">{{ langService.t('dash.all') }}</option>
+            <option *ngFor="let a of authors()" [value]="a">{{ a }}</option>
+          </select>
+        </div>
+
         <!-- Language -->
         <div class="filter-group">
           <label class="filter-label">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.198 0.955a.75.75 0 0 1 .605-.005l7 3a.75.75 0 0 1 0 1.386l-7 3a.75.75 0 0 1-.61-.008L.802 5.41A.75.75 0 0 1 .8 4.022l6.398-3.067Zm7.598 7.224a.75.75 0 0 1 .004 1.342l-7 3a.75.75 0 0 1-.604.001l-7-3A.75.75 0 0 1 .2 8.18l6.996 2.998 6.6-2.999Z" clip-rule="evenodd"/></svg>
-            Language
+            {{ langService.t('dash.language') }}
           </label>
           <select class="filter-select" [ngModel]="langFilter()" (ngModelChange)="setLang($event)">
-            <option value="">All</option>
+            <option value="">{{ langService.t('dash.all') }}</option>
             <option *ngFor="let l of languages" [value]="l">{{ l }}</option>
           </select>
         </div>
@@ -65,10 +78,10 @@ import { FormsModule } from '@angular/forms';
         <div class="filter-group">
           <label class="filter-label">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Zm0 6a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9Zm1 5a1 1 0 0 0 0 2h14a1 1 0 0 0 0-2H3Z"/></svg>
-            Genre
+            {{ langService.t('dash.genre') }}
           </label>
           <select class="filter-select" [ngModel]="genreFilter()" (ngModelChange)="setGenre($event)">
-            <option value="">All</option>
+            <option value="">{{ langService.t('dash.all') }}</option>
             <option *ngFor="let g of genres" [value]="g">{{ g }}</option>
           </select>
         </div>
@@ -77,10 +90,10 @@ import { FormsModule } from '@angular/forms';
         <div class="filter-group">
           <label class="filter-label">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.5 3A2.5 2.5 0 0 0 3 5.5v2.879a2.5 2.5 0 0 0 .732 1.767l6.5 6.5a2.5 2.5 0 0 0 3.536 0l2.878-2.878a2.5 2.5 0 0 0 0-3.536l-6.5-6.5A2.5 2.5 0 0 0 8.38 3H5.5ZM6 7a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
-            Category
+            {{ langService.t('dash.category') }}
           </label>
           <select class="filter-select" [ngModel]="catFilter()" (ngModelChange)="setCat($event)">
-            <option value="">All</option>
+            <option value="">{{ langService.t('dash.all') }}</option>
             <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
           </select>
         </div>
@@ -89,7 +102,7 @@ import { FormsModule } from '@angular/forms';
         <div class="filter-group page-size-group">
           <label class="filter-label">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M3 4a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm0 4a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Zm0 4a1 1 0 0 1 1-1h6a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1Z"/></svg>
-            Per page
+            {{ langService.t('dash.perPage') }}
           </label>
           <select class="filter-select" [ngModel]="pageSize()" (ngModelChange)="setPageSize(+$event)">
             <option [value]="6">6</option>
@@ -102,27 +115,31 @@ import { FormsModule } from '@angular/forms';
         <!-- Clear all -->
         <button class="clear-all-btn" *ngIf="hasActiveFilters()" (click)="clearAll()">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"/></svg>
-          Clear filters
+          {{ langService.t('dash.clearFilters') }}
         </button>
       </div>
 
       <!-- Active filter badges + result count -->
       <div class="active-badges" *ngIf="hasActiveFilters() || filteredBooks().length > 0">
+        <span class="badge" *ngIf="authorFilter()">
+          {{ langService.t('dash.badgeAuthor') }}: {{ authorFilter() }}
+          <button (click)="setAuthor('')">&times;</button>
+        </span>
         <span class="badge" *ngIf="langFilter()">
-          Language: {{ langFilter() }}
+          {{ langService.t('dash.badgeLang') }}: {{ langFilter() }}
           <button (click)="setLang('')">&times;</button>
         </span>
         <span class="badge" *ngIf="genreFilter()">
-          Genre: {{ genreFilter() }}
+          {{ langService.t('dash.badgeGenre') }}: {{ genreFilter() }}
           <button (click)="setGenre('')">&times;</button>
         </span>
         <span class="badge" *ngIf="catFilter()">
-          Category: {{ catFilter() }}
+          {{ langService.t('dash.badgeCat') }}: {{ catFilter() }}
           <button (click)="setCat('')">&times;</button>
         </span>
         <span class="results-count">
-          {{ filteredBooks().length }} book{{ filteredBooks().length !== 1 ? 's' : '' }}
-          <ng-container *ngIf="totalPages() > 1"> · page {{ currentPage() }} of {{ totalPages() }}</ng-container>
+          {{ filteredBooks().length }} {{ filteredBooks().length !== 1 ? langService.t('dash.books') : langService.t('dash.book') }}
+          <ng-container *ngIf="totalPages() > 1"> · {{ langService.t('dash.page') }} {{ currentPage() }} {{ langService.t('dash.of') }} {{ totalPages() }}</ng-container>
         </span>
       </div>
 
@@ -139,11 +156,11 @@ import { FormsModule } from '@angular/forms';
       <!-- Empty State -->
       <div *ngIf="filteredBooks().length === 0" class="empty-state">
         <div class="empty-icon">🔍</div>
-        <p *ngIf="searchQuery() || hasActiveFilters()">No books match your current search or filters.</p>
-        <p *ngIf="!searchQuery() && !hasActiveFilters()">No books found in this category.</p>
+        <p *ngIf="searchQuery() || hasActiveFilters()">{{ langService.t('dash.noMatchFilter') }}</p>
+        <p *ngIf="!searchQuery() && !hasActiveFilters()">{{ langService.t('dash.noMatch') }}</p>
         <div class="empty-actions">
-          <button *ngIf="hasActiveFilters() || searchQuery()" class="btn-ghost" (click)="clearAll(); onSearch('')">Clear all filters</button>
-          <a *ngIf="activeStatus() === 'All Books' && !searchQuery() && !hasActiveFilters()" routerLink="/add" class="link">Add your first book →</a>
+          <button *ngIf="hasActiveFilters() || searchQuery()" class="btn-ghost" (click)="clearAll(); onSearch('')">{{ langService.t('dash.clearAllFilters') }}</button>
+          <a *ngIf="activeStatus() === 'All Books' && !searchQuery() && !hasActiveFilters()" routerLink="/add" class="link">{{ langService.t('dash.addFirst') }}</a>
         </div>
       </div>
 
@@ -443,12 +460,27 @@ import { FormsModule } from '@angular/forms';
     }
   `]
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   private bookService = inject(BookService);
+  langService = inject(LanguageService);
+  private route = inject(ActivatedRoute);
 
-  statusFilters = ['All Books', 'Yet to Read', 'Reading', 'Completed', 'Lent Out', 'Wishlist'];
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      const status = params['status'];
+      if (status && this.STATUS_VALUES.includes(status)) {
+        this.activeStatus.set(status);
+      }
+    });
+  }
+
+  readonly STATUS_KEYS = ['dash.filterAll', 'dash.filterYetToRead', 'dash.filterReading', 'dash.filterCompleted', 'dash.filterLentOut', 'dash.filterBorrowed', 'dash.filterWishlist'];
+  readonly STATUS_VALUES = ['All Books', 'Yet to Read', 'Reading', 'Completed', 'Lent Out', 'Borrowed', 'Wishlist'];
+
+  statusFilters = computed(() => this.STATUS_KEYS.map(k => this.langService.t(k)));
   activeStatus = signal('All Books');
   searchQuery = signal('');
+  authorFilter = signal<string>('');
   langFilter = signal<BookLanguage | ''>('');
   genreFilter = signal<BookGenre | ''>('');
   catFilter = signal<BookCategory | ''>('');
@@ -468,14 +500,20 @@ export class DashboardComponent {
     'Documentary', 'Travel', 'Magazine', 'Other'
   ];
 
+  authors = computed(() => {
+    const allAuthors = this.bookService.books().map(b => b.author).filter(Boolean);
+    return [...new Set(allAuthors)].sort((a, b) => a.localeCompare(b));
+  });
+
   hasActiveFilters = computed(() =>
-    !!this.langFilter() || !!this.genreFilter() || !!this.catFilter()
+    !!this.authorFilter() || !!this.langFilter() || !!this.genreFilter() || !!this.catFilter()
   );
 
   /** All books matching the current filters — no pagination yet */
   filteredBooks = computed(() => {
     const status = this.activeStatus();
     const q = this.searchQuery().toLowerCase().trim();
+    const authorFilter = this.authorFilter();
     const lang = this.langFilter();
     const genre = this.genreFilter();
     const cat = this.catFilter();
@@ -483,7 +521,6 @@ export class DashboardComponent {
     let books = this.bookService.books();
 
     if (status !== 'All Books') books = books.filter(b => b.status === status);
-
     if (q) books = books.filter(b =>
       b.title.toLowerCase().includes(q) ||
       b.author.toLowerCase().includes(q) ||
@@ -491,13 +528,13 @@ export class DashboardComponent {
       (b.genre ?? '').toLowerCase().includes(q) ||
       (b.category ?? '').toLowerCase().includes(q) ||
       b.status.toLowerCase().includes(q) ||
-      (b.borrowedBy ?? '').toLowerCase().includes(q)
+      (b.borrowedBy ?? '').toLowerCase().includes(q) ||
+      (b.borrowedFrom ?? '').toLowerCase().includes(q)
     );
-
+    if (authorFilter) books = books.filter(b => b.author === authorFilter);
     if (lang) books = books.filter(b => b.language === lang);
     if (genre) books = books.filter(b => b.genre === genre);
     if (cat) books = books.filter(b => b.category === cat);
-
     return books;
   });
 
@@ -549,13 +586,15 @@ export class DashboardComponent {
 
   /* ── Actions that reset to page 1 ── */
   onSearch(q: string) { this.searchQuery.set(q); }
-  setStatus(s: string) { this.activeStatus.set(s); }
+  setStatus(idx: number) { this.activeStatus.set(this.STATUS_VALUES[idx]); }
+  setAuthor(v: string) { this.authorFilter.set(v); }
   setLang(v: BookLanguage | '') { this.langFilter.set(v); }
   setGenre(v: BookGenre | '') { this.genreFilter.set(v); }
   setCat(v: BookCategory | '') { this.catFilter.set(v); }
   setPageSize(n: number) { this.pageSize.set(n); }
 
   clearAll() {
+    this.authorFilter.set('');
     this.langFilter.set('');
     this.genreFilter.set('');
     this.catFilter.set('');

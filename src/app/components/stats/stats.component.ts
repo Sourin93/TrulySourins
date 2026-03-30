@@ -2,6 +2,7 @@ import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { BookService } from '../../services/book.service';
+import { LanguageService } from '../../services/language.service';
 
 interface StatItem {
   label: string;
@@ -20,21 +21,21 @@ interface StatItem {
     <div class="stats-page container">
       <header class="page-header">
         <div>
-          <h1>Reading Statistics</h1>
-          <p class="subtitle">A snapshot of your library</p>
+          <h1>{{ langService.t('stats.title') }}</h1>
+          <p class="subtitle">{{ langService.t('stats.subtitle') }}</p>
         </div>
         <a routerLink="/" class="back-btn">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd"/>
           </svg>
-          Back to Library
+          {{ langService.t('stats.backBtn') }}
         </a>
       </header>
 
       <!-- Empty state -->
       <div class="empty" *ngIf="total() === 0">
         <div class="empty-icon">📚</div>
-        <p>No books yet. <a routerLink="/add">Add your first book →</a></p>
+        <p>{{ langService.t('stats.noBooks') }} <a routerLink="/add">{{ langService.t('stats.addFirst') }}</a></p>
       </div>
 
       <ng-container *ngIf="total() > 0">
@@ -58,7 +59,7 @@ interface StatItem {
               </ng-container>
               <!-- Centre text -->
               <text x="100" y="95" text-anchor="middle" class="centre-num">{{ total() }}</text>
-              <text x="100" y="114" text-anchor="middle" class="centre-label">In Library</text>
+              <text x="100" y="114" text-anchor="middle" class="centre-label">{{ langService.t('stats.inLibrary') }}</text>
             </svg>
           </div>
 
@@ -72,33 +73,13 @@ interface StatItem {
           </div>
         </div>
 
-        <!-- Stat Cards -->
-        <div class="cards-grid">
-          <div class="stat-card" *ngFor="let s of stats()">
-            <div class="card-top">
-              <span class="card-emoji">{{ s.emoji }}</span>
-              <span class="card-count" [style.color]="s.color">{{ s.count }}</span>
-            </div>
-            <div class="card-label">{{ s.label }}</div>
-            <div class="card-desc">{{ s.desc }}</div>
-            <!-- Bar -->
-            <div class="card-bar-track">
-              <div
-                class="card-bar-fill"
-                [style.width]="pct(s.count) + '%'"
-                [style.background]="s.color"
-                [style.box-shadow]="'0 0 10px ' + s.glow"
-              ></div>
-            </div>
-            <div class="card-pct" [style.color]="s.color">{{ pct(s.count) }}%</div>
-          </div>
-        </div>
+        
 
         <!-- Author Breakdown -->
         <div class="hbar-card" *ngIf="authorStats().length > 0">
           <div class="section-header">
-            <h3 class="section-title">By Author</h3>
-            <span class="author-count-pill">{{ authorStats().length }} author{{ authorStats().length !== 1 ? 's' : '' }}</span>
+            <h3 class="section-title">{{ langService.t('stats.byAuthor') }}</h3>
+            <span class="author-count-pill">{{ authorStats().length }} {{ authorStats().length !== 1 ? langService.t('stats.authors') : langService.t('stats.author') }}</span>
           </div>
 
           <!-- Top author callout -->
@@ -106,7 +87,7 @@ interface StatItem {
             <span class="top-crown">👑</span>
             <div class="top-author-info">
               <span class="top-author-name">{{ topAuthor()!.author }}</span>
-              <span class="top-author-sub">Most books — {{ topAuthor()!.count }} in your library</span>
+              <span class="top-author-sub">{{ langService.t('stats.mostBooks') }} — {{ topAuthor()!.count }} {{ langService.t('stats.inYourLibrary') }}</span>
             </div>
             <span class="top-author-count">{{ topAuthor()!.count }}</span>
           </div>
@@ -123,6 +104,41 @@ interface StatItem {
                 ></div>
               </div>
               <span class="hbar-val" [style.color]="i === 0 ? '#f472b6' : '#818cf8'">{{ a.count }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language Breakdown -->
+        <div class="hbar-card" *ngIf="languageStats().length > 0">
+          <div class="section-header">
+            <h3 class="section-title">{{ langService.t('stats.byLanguage') }}</h3>
+            <span class="author-count-pill" style="background: rgba(20,184,166,0.12); border-color: rgba(20,184,166,0.25); color: #5eead4;">
+              {{ languageStats().length }} {{ languageStats().length !== 1 ? langService.t('stats.languages') : langService.t('stats.language') }}
+            </span>
+          </div>
+
+          <!-- Top language callout -->
+          <div class="top-author-card" *ngIf="topLanguage()" style="background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2);">
+            <span class="top-crown">🌐</span>
+            <div class="top-author-info">
+              <span class="top-author-name" style="color: #fbbf24;">{{ topLanguage()!.language }}</span>
+              <span class="top-author-sub">{{ langService.t('stats.mostCommon') }} — {{ topLanguage()!.count }} {{ langService.t('stats.inYourLibrary') }}</span>
+            </div>
+            <span class="top-author-count" style="color: #f59e0b;">{{ topLanguage()!.count }}</span>
+          </div>
+
+          <div class="hbar-list author-list">
+            <div class="hbar-row" *ngFor="let l of languageStats(); let i = index">
+              <span class="hbar-label author-label" [title]="l.language">{{ l.language }}</span>
+              <div class="hbar-track">
+                <div
+                  class="hbar-fill"
+                  [style.width]="languagePct(l.count) + '%'"
+                  [style.background]="i === 0 ? '#f59e0b' : '#14b8a6'"
+                  [style.box-shadow]="i === 0 ? '0 0 10px rgba(245,158,11,0.4)' : 'none'"
+                ></div>
+              </div>
+              <span class="hbar-val" [style.color]="i === 0 ? '#f59e0b' : '#14b8a6'">{{ l.count }}</span>
             </div>
           </div>
         </div>
@@ -253,6 +269,7 @@ interface StatItem {
       border-radius: 20px;
       padding: 1.75rem 2rem;
       box-shadow: var(--shadow-lg);
+      margin-bottom: 1.5rem;
     }
     .section-title {
       margin: 0 0 1.5rem;
@@ -304,6 +321,7 @@ interface StatItem {
 })
 export class StatsComponent {
   private bookService = inject(BookService);
+  langService = inject(LanguageService);
 
   total = computed(() =>
     this.bookService.books().filter(b => b.status !== 'Wishlist').length
@@ -329,38 +347,56 @@ export class StatsComponent {
     return Math.round((count / this.maxAuthorCount()) * 100);
   }
 
+  /** Books grouped by language, sorted by count desc */
+  languageStats = computed(() => {
+    const map = new Map<string, number>();
+    for (const b of this.bookService.books()) {
+      const lang = b.language || 'Unknown';
+      map.set(lang, (map.get(lang) ?? 0) + 1);
+    }
+    return [...map.entries()]
+      .map(([language, count]) => ({ language, count }))
+      .sort((a, b) => b.count - a.count);
+  });
+
+  topLanguage = computed(() => this.languageStats()[0] ?? null);
+
+  private maxLanguageCount = computed(() => this.languageStats()[0]?.count ?? 1);
+
+  languagePct(count: number): number {
+    return Math.round((count / this.maxLanguageCount()) * 100);
+  }
+
   stats = computed<StatItem[]>(() => [
     {
-      label: 'Completed',
+      label: this.langService.t('stats.completed'),
       count: this.bookService.completedBooks().length,
-      color: '#34d399',
-      glow: 'rgba(52,211,153,0.4)',
-      emoji: '✅',
+      color: '#34d399', glow: 'rgba(52,211,153,0.4)', emoji: '✅',
       desc: 'Books you have finished reading'
     },
     {
-      label: 'Reading',
+      label: this.langService.t('stats.reading'),
       count: this.bookService.readingBooks().length,
-      color: '#60a5fa',
-      glow: 'rgba(96,165,250,0.4)',
-      emoji: '📖',
+      color: '#60a5fa', glow: 'rgba(96,165,250,0.4)', emoji: '📖',
       desc: 'Currently in progress'
     },
     {
-      label: 'Yet to Read',
+      label: this.langService.t('stats.yetToRead'),
       count: this.bookService.wantToReadBooks().length,
-      color: '#a78bfa',
-      glow: 'rgba(167,139,250,0.4)',
-      emoji: '🔖',
+      color: '#a78bfa', glow: 'rgba(167,139,250,0.4)', emoji: '🔖',
       desc: 'On your reading wishlist'
     },
     {
-      label: 'Lent Out',
+      label: this.langService.t('stats.lentOut'),
       count: this.bookService.lentBooks().length,
-      color: '#fb923c',
-      glow: 'rgba(251,146,60,0.4)',
-      emoji: '🤝',
+      color: '#fb923c', glow: 'rgba(251,146,60,0.4)', emoji: '🤝',
       desc: 'Shared with others'
+    },
+    {
+      label: this.langService.t('stats.borrowed'),
+      count: this.bookService.borrowedBooks().length,
+      color: '#2dd4bf', glow: 'rgba(45,212,191,0.4)', emoji: '📥',
+      desc: 'Borrowed from friends'
     }
   ]);
 

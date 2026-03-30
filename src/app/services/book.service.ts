@@ -15,6 +15,7 @@ export class BookService {
     readingBooks = computed(() => this.books().filter(b => b.status === 'Reading'));
     completedBooks = computed(() => this.books().filter(b => b.status === 'Completed'));
     lentBooks = computed(() => this.books().filter(b => b.status === 'Lent Out'));
+    borrowedBooks = computed(() => this.books().filter(b => b.status === 'Borrowed'));
     wishlistBooks = computed(() => this.books().filter(b => b.status === 'Wishlist'));
 
     constructor() {
@@ -47,13 +48,16 @@ export class BookService {
         this.books.update(books => [newBook, ...books]);
     }
 
-    updateStatus(id: string, status: Book['status'], borrowedBy?: string) {
+    updateStatus(id: string, status: Book['status'], personName?: string) {
         this.books.update(books =>
             books.map(b => b.id === id ? {
                 ...b,
                 status,
-                borrowedBy: status === 'Lent Out' ? borrowedBy : undefined,
-                lentDate: status === 'Lent Out' ? b.lentDate : undefined
+                // If Lent Out, personName is the borrower. If Borrowed, personName is the owner.
+                borrowedBy: status === 'Lent Out' ? personName : undefined,
+                borrowedFrom: status === 'Borrowed' ? personName : undefined,
+                // Record the date when it was lent or borrowed
+                lentDate: (status === 'Lent Out' || status === 'Borrowed') ? b.lentDate : undefined
             } : b)
         );
     }

@@ -6,11 +6,12 @@ export interface Book {
   id: string;
   title: string;
   author: string;
-  status: 'Yet to Read' | 'Reading' | 'Completed' | 'Lent Out' | 'Wishlist';
+  status: 'Yet to Read' | 'Reading' | 'Completed' | 'Lent Out' | 'Borrowed' | 'Wishlist';
   category?: BookCategory;
   language?: BookLanguage;
   genre?: BookGenre;
-  borrowedBy?: string;
+  borrowedBy?: string;     // For Lent Out
+  borrowedFrom?: string;   // For Borrowed
   lentDate?: string;
   coverUrl?: string;
   feedback?: string;

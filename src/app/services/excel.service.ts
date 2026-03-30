@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import * as XLSX from 'xlsx';
 import { Book, BookCategory, BookLanguage, BookGenre } from '../models/book.model';
 
-const VALID_STATUSES: Book['status'][] = ['Yet to Read', 'Reading', 'Completed', 'Lent Out', 'Wishlist'];
+const VALID_STATUSES: Book['status'][] = ['Yet to Read', 'Reading', 'Completed', 'Lent Out', 'Borrowed', 'Wishlist'];
 const VALID_GENRES: BookGenre[] = [
     'Fiction', 'Non-Fiction', 'Mystery', 'Thriller', 'Romance',
     'Science Fiction', 'Fantasy', 'Horror', 'Biography', 'Self-Help',
@@ -29,6 +29,7 @@ export class ExcelService {
             'Category': b.category ?? '',
             'Language': b.language ?? '',
             'Borrowed By': b.borrowedBy ?? '',
+            'Borrowed From': b.borrowedFrom ?? '',
             'Lent Date': b.lentDate ?? '',
             'Cover URL': b.coverUrl ?? '',
             'Feedback': b.feedback ?? '',
@@ -48,6 +49,7 @@ export class ExcelService {
             { wch: 18 }, // Category
             { wch: 12 }, // Language
             { wch: 20 }, // Borrowed By
+            { wch: 20 }, // Borrowed From
             { wch: 20 }, // Lent Date
             { wch: 40 }, // Cover URL
             { wch: 50 }, // Feedback
@@ -63,7 +65,7 @@ export class ExcelService {
 
     // ── Import ──────────────────────────────────────────────────────────────────
 
-    import(file: File): Promise<{ books: Book[]; skipped: number }> {
+    import(file: File): Promise<{ books: Book[]; skippedMessages: string[] }> {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
 
@@ -75,16 +77,26 @@ export class ExcelService {
                     const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: '' });
 
                     const books: Book[] = [];
-                    let skipped = 0;
+                    const skippedMessages: string[] = [];
 
-                    for (const row of rows) {
+                    for (let i = 0; i < rows.length; i++) {
+                        const row = rows[i];
+                        const excelRow = i + 2; // +1 for 0-index array, +1 for header row
                         const title = (row['Title'] ?? '').trim();
                         const author = (row['Author'] ?? '').trim();
                         const status = (row['Status'] ?? '').trim() as Book['status'];
 
                         // Required fields
-                        if (!title || !author || !VALID_STATUSES.includes(status)) {
-                            skipped++;
+                        if (!title) {
+                            skippedMessages.push(`Row ${excelRow}: Missing Title`);
+                            continue;
+                        }
+                        if (!author) {
+                            skippedMessages.push(`Row ${excelRow}: Missing Author`);
+                            continue;
+                        }
+                        if (!VALID_STATUSES.includes(status)) {
+                            skippedMessages.push(`Row ${excelRow}: Invalid or Missing Status '${status}' (Allowed: ${VALID_STATUSES.join(', ')})`);
                             continue;
                         }
 
@@ -104,6 +116,7 @@ export class ExcelService {
                             category: category && VALID_CATEGORIES.includes(category) ? category : undefined,
                             language: language && VALID_LANGUAGES.includes(language) ? language : undefined,
                             borrowedBy: row['Borrowed By']?.trim() || undefined,
+                            borrowedFrom: row['Borrowed From']?.trim() || undefined,
                             lentDate: row['Lent Date']?.trim() || undefined,
                             coverUrl: row['Cover URL']?.trim() || undefined,
                             feedback: row['Feedback']?.trim() || undefined,
@@ -111,7 +124,7 @@ export class ExcelService {
                         });
                     }
 
-                    resolve({ books, skipped });
+                    resolve({ books, skippedMessages });
                 } catch (err) {
                     reject(err);
                 }

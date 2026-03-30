@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { Book } from '../../models/book.model';
 import { Router } from '@angular/router';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-book-card',
@@ -28,7 +29,7 @@ import { Router } from '@angular/router';
 
       <div class="card-content">
         <h3 class="title">{{ book.title }}</h3>
-        <p class="author">by {{ book.author }}</p>
+        <p class="author">{{ langService.t('card.by') }} {{ book.author }}</p>
 
         <!-- Category / Language / Genre chips -->
         <div class="meta-chips" *ngIf="book.category || book.language || book.genre">
@@ -41,17 +42,28 @@ import { Router } from '@angular/router';
         <div class="borrower-info" *ngIf="book.status === 'Lent Out' && book.borrowedBy">
           <span class="borrower-icon">👤</span>
           <div class="borrower-details">
-            <span>Borrowed by <strong>{{ book.borrowedBy }}</strong></span>
+            <span>{{ langService.t('card.borrowedBy') }} <strong>{{ book.borrowedBy }}</strong></span>
             <span class="borrow-date" *ngIf="book.lentDate">
-              Since {{ book.lentDate | date:'mediumDate' }}
-              <span class="overdue-tag" *ngIf="lentAgeClass() === 'warn-red'">⚠️ 6+ months!</span>
-              <span class="overdue-tag amber" *ngIf="lentAgeClass() === 'warn-amber'">⏰ 3+ months</span>
+              {{ langService.t('card.since') }} {{ book.lentDate | date:'mediumDate' }}
+              <span class="overdue-tag" *ngIf="lentAgeClass() === 'warn-red'">{{ langService.t('card.overdue6') }}</span>
+              <span class="overdue-tag amber" *ngIf="lentAgeClass() === 'warn-amber'">{{ langService.t('card.overdue3') }}</span>
             </span>
           </div>
         </div>
 
-        <!-- Date for non-lent books (optional) -->
-        <div class="book-date" *ngIf="book.status !== 'Lent Out' && book.lentDate">
+        <!-- Borrowed from info banner -->
+        <div class="borrowed-from-info" *ngIf="book.status === 'Borrowed' && book.borrowedFrom">
+          <span class="borrowed-from-icon">📥</span>
+          <div class="borrowed-from-details">
+            <span>{{ langService.t('card.borrowedFrom') }} <strong>{{ book.borrowedFrom }}</strong></span>
+            <span class="borrow-date" *ngIf="book.lentDate">
+              {{ langService.t('card.since') }} {{ book.lentDate | date:'mediumDate' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Date for non-lent/non-borrowed books (optional) -->
+        <div class="book-date" *ngIf="book.status !== 'Lent Out' && book.status !== 'Borrowed' && book.lentDate">
           <span class="date-icon">📅</span> {{ book.lentDate | date:'mediumDate' }}
         </div>
 
@@ -59,7 +71,7 @@ import { Router } from '@angular/router';
         <div class="feedback-block" *ngIf="book.feedback && (book.status === 'Reading' || book.status === 'Completed')">
           <div class="feedback-header">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2c-2.236 0-4.43.18-6.57.524C1.993 2.755 1 4.014 1 5.426v5.148c0 1.413.993 2.67 2.43 2.902.848.137 1.705.248 2.57.331v3.443a.75.75 0 0 0 1.28.53l3.58-3.58A6.667 6.667 0 0 0 10.096 14h.404c2.236 0 4.43-.18 6.57-.524 1.437-.231 2.43-1.49 2.43-2.902V5.426c0-1.413-.993-2.67-2.43-2.902A41.202 41.202 0 0 0 10 2Z" clip-rule="evenodd"/></svg>
-            My Thoughts
+            {{ langService.t('card.myThoughts') }}
           </div>
           <p class="feedback-text">{{ book.feedback }}</p>
         </div>
@@ -67,11 +79,12 @@ import { Router } from '@angular/router';
 
       <div class="card-actions">
         <select [value]="book.status" (change)="onStatusChangeHelper($event)">
-          <option value="Yet to Read">Yet to Read</option>
-          <option value="Reading">Reading</option>
-          <option value="Completed">Completed</option>
-          <option value="Lent Out">Lent Out</option>
-          <option value="Wishlist">Wishlist 🛒</option>
+          <option value="Yet to Read">{{ langService.t('card.optYetToRead') }}</option>
+          <option value="Reading">{{ langService.t('card.optReading') }}</option>
+          <option value="Completed">{{ langService.t('card.optCompleted') }}</option>
+          <option value="Lent Out">{{ langService.t('card.optLentOut') }}</option>
+          <option value="Borrowed">{{ langService.t('card.optBorrowed') }}</option>
+          <option value="Wishlist">{{ langService.t('card.optWishlist') }}</option>
         </select>
       </div>
     </div>
@@ -124,6 +137,10 @@ import { Router } from '@angular/router';
       background: linear-gradient(160deg, rgba(168,85,247,0.1) 0%, var(--bg-card) 50%);
       border-color: rgba(168,85,247,0.5);
     }
+    .card.borrowed {
+      background: linear-gradient(160deg, rgba(20,184,166,0.1) 0%, var(--bg-card) 50%);
+      border-color: rgba(194, 230, 12, 0.85);
+    }
     .card.wishlist {
       background: linear-gradient(160deg, rgba(236,72,153,0.1) 0%, var(--bg-card) 50%);
       border-color: rgba(236,72,153,0.5);
@@ -148,6 +165,7 @@ import { Router } from '@angular/router';
     .card.reading .status-badge { color: var(--status-reading); background: rgba(245, 158, 11, 0.1); }
     .card.completed .status-badge { color: var(--status-completed); background: rgba(16, 185, 129, 0.1); }
     .card.lent-out .status-badge { color: var(--status-lent); background: rgba(168, 85, 247, 0.1); }
+    .card.borrowed .status-badge { color: #2dd4bf; background: rgba(20, 184, 166, 0.12); }
     .card.wishlist .status-badge { color: #f472b6; background: rgba(236, 72, 153, 0.12); }
 
     /* Age-based warning glow for lent books */
@@ -252,7 +270,20 @@ import { Router } from '@angular/router';
       color: #d8b4fe;
     }
 
-    .borrower-details {
+    .borrowed-from-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+      padding: 0.5rem 0.75rem;
+      background: rgba(20, 184, 166, 0.12);
+      border: 1px solid rgba(20, 184, 166, 0.25);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: #5eead4;
+    }
+
+    .borrower-details, .borrowed-from-details {
       display: flex;
       flex-direction: column;
       gap: 0.15rem;
@@ -263,7 +294,7 @@ import { Router } from '@angular/router';
       opacity: 0.75;
     }
 
-    .borrower-icon { font-size: 1rem; margin-top: 0.1rem; }
+    .borrower-icon, .borrowed-from-icon { font-size: 1rem; margin-top: 0.1rem; }
 
     .book-date {
       margin-top: 0.6rem;
@@ -368,6 +399,7 @@ export class BookCardComponent {
   @Output() onDelete = new EventEmitter<string>();
 
   private router = inject(Router);
+  langService = inject(LanguageService);
 
   onEditClick() {
     this.router.navigate(['/edit', this.book.id]);
@@ -392,11 +424,18 @@ export class BookCardComponent {
     const newStatus = select.value as Book['status'];
 
     if (newStatus === 'Lent Out') {
-      const name = prompt('Who borrowed this book?');
+      const name = prompt('Who did you lend this book to?');
       if (name && name.trim()) {
         this.statusChange.emit({ status: newStatus, borrowedBy: name.trim() });
       } else {
         // Revert the select if user cancelled
+        select.value = this.book.status;
+      }
+    } else if (newStatus === 'Borrowed') {
+      const name = prompt('Who did you borrow this book from?');
+      if (name && name.trim()) {
+        this.statusChange.emit({ status: newStatus, borrowedBy: name.trim() }); // service expects person arg here
+      } else {
         select.value = this.book.status;
       }
     } else {
