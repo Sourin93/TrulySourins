@@ -71,6 +71,13 @@ import { LanguageService } from '../../services/language.service';
               <span class="tool-label">{{ langService.t('nav.export') }}</span>
             </button>
 
+            <button class="tool-btn template-btn" (click)="downloadTemplate()" title="Download Excel Template" aria-label="Download template">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M2.5 4A1.5 1.5 0 0 0 1 5.5V16a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5.5A1.5 1.5 0 0 0 17.5 4h-15ZM10 12.25l4.25-4.25a.75.75 0 0 0-1.06-1.06L10.75 9.38V5.5a.75.75 0 0 0-1.5 0v3.88l-2.44-2.44a.75.75 0 1 0-1.06 1.06L10 12.25Zm-5 2.5a.75.75 0 0 0 0 1.5h10a.75.75 0 0 0 0-1.5H5Z" clip-rule="evenodd" />
+              </svg>
+              <span class="tool-label">Template</span>
+            </button>
+
             <button class="tool-btn import-btn" (click)="triggerImport()" aria-label="Import from Excel">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M10 18a.75.75 0 0 1-.75-.75V8.56L6.28 11.53a.75.75 0 1 1-1.06-1.06l4.25-4.25a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 1 1-1.06 1.06l-2.97-2.97v8.69A.75.75 0 0 1 10 18ZM3.5 5.25A2.75 2.75 0 0 1 6.25 2.5h7.5A2.75 2.75 0 0 1 16.5 5.25v.5a.75.75 0 0 1-1.5 0v-.5c0-.69-.56-1.25-1.25-1.25h-7.5C5.56 4 5 4.56 5 5.25v.5a.75.75 0 0 1-1.5 0v-.5Z" clip-rule="evenodd"/>
@@ -365,6 +372,7 @@ import { LanguageService } from '../../services/language.service';
     /* Per-button colour accents */
     .manual-btn:hover { color: #a5b4fc; background: rgba(99,102,241,0.12); }
     .export-btn:hover { color: #86efac; background: rgba(34,197,94,0.1); }
+    .template-btn:hover { color: #fde047; background: rgba(253,224,71,0.1); }
     .import-btn:hover { color: #7dd3fc; background: rgba(56,189,248,0.1); }
 
     /* Bell button quirks (badge + shake) */
@@ -681,7 +689,7 @@ import { LanguageService } from '../../services/language.service';
       .nav-inner { justify-content: space-between; gap: 0.25rem; padding: 0 0.5rem; }
     }
     @media (max-width: 480px) {
-      .manual-btn, .export-btn { display: none; }
+      .manual-btn, .export-btn, .template-btn { display: none; }
       .tool-divider:nth-child(2), .tool-divider:nth-child(4) { display: none; }
       .tool-group .import-btn { border-radius: 9px; }
       .lang-toggle { padding: 0.2rem 0.4rem; font-size: 0.7rem; }
@@ -770,6 +778,11 @@ export class NavbarComponent {
     }
     this.excelService.export(books);
     this.showToast(`📥 ${books.length} book${books.length !== 1 ? 's' : ''} exported`);
+  }
+
+  downloadTemplate() {
+    this.excelService.downloadTemplate();
+    this.showToast('📄 Template downloaded');
   }
 
   triggerImport() {

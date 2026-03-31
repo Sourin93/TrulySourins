@@ -1,9 +1,10 @@
 import {
-  Component, inject, signal, ViewChild, ElementRef, AfterViewChecked
+  Component, inject, signal, ViewChild, ElementRef, AfterViewChecked, OnInit
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
+import { LanguageService } from '../../services/language.service';
 
 @Component({
   selector: 'app-chatbot',
@@ -61,6 +62,15 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
             <span class="mode-label" [class.active]="chatbot.isOfflineMode()">📴</span>
           </div>
 
+          <!-- Voice Toggle -->
+          <button class="chat-action-btn" (click)="toggleTTS()" [class.muted]="!ttsEnabled()" aria-label="Toggle Text-to-Speech" [title]="ttsEnabled() ? 'Voice responses ON' : 'Voice responses OFF'">
+            <svg *ngIf="ttsEnabled()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10.457 2.458a.75.75 0 0 0-1.12-.647L5.594 4H3.75A2.25 2.25 0 0 0 1.5 6.25v2.5a2.25 2.25 0 0 0 2.25 2.25h1.844l3.743 2.189a.75.75 0 0 0 1.12-.648v-10Zm3.791 2.029a.75.75 0 0 1 1.06 0 5.488 5.488 0 0 1 1.642 3.903c0 1.517-.611 2.895-1.597 3.899a.75.75 0 0 1-1.06-1.06 3.987 3.987 0 0 0 1.157-2.839c0-1.1-.45-2.096-1.176-2.813a.75.75 0 0 1-.026-1.09ZM15.02 1.258a.75.75 0 0 1 1.06 0 8.484 8.484 0 0 1 2.42 5.922c0 2.36-.962 4.5-2.518 6.042a.75.75 0 0 1-1.06-1.06 6.984 6.984 0 0 0 2.078-4.982c0-1.928-.782-3.676-2.046-4.94a.75.75 0 0 1 .066-1.082Z" />
+            </svg>
+            <svg *ngIf="!ttsEnabled()" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10.457 2.458a.75.75 0 0 0-1.12-.647L5.594 4H3.75A2.25 2.25 0 0 0 1.5 6.25v2.5a2.25 2.25 0 0 0 2.25 2.25h1.844l3.743 2.189a.75.75 0 0 0 1.12-.648v-10ZM15.28 7.22a.75.75 0 0 0-1.06 1.06L15.44 9.5l-1.22 1.22a.75.75 0 1 0 1.06 1.06l1.22-1.22 1.22 1.22a.75.75 0 0 0 1.06-1.06l-1.22-1.22 1.22-1.22a.75.75 0 0 0-1.06-1.06l-1.22 1.22-1.22-1.22Z" clip-rule="evenodd" />
+            </svg>
+          </button>
           <!-- Clear history -->
           <button class="chat-clear-btn" (click)="clearHistory()" aria-label="Clear chat history" title="Clear chat">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -137,6 +147,17 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
 
         <!-- Input Bar -->
         <div class="chat-input-bar">
+          <button
+            class="mic-btn"
+            [class.listening]="isListening()"
+            (click)="toggleVoiceInput()"
+            title="Voice typing"
+            aria-label="Voice typing">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M7 4a3 3 0 0 1 6 0v6a3 3 0 1 1-6 0V4Z" />
+              <path d="M5.5 9.643a.75.75 0 0 0-1.5 0V10c0 3.06 2.29 5.585 5.25 5.954V17.5h-1.5a.75.75 0 0 0 0 1.5h4.5a.75.75 0 0 0 0-1.5h-1.5v-1.546A6.001 6.001 0 0 0 16 10v-.357a.75.75 0 0 0-1.5 0V10a4.5 4.5 0 0 1-9 0v-.357Z" />
+            </svg>
+          </button>
           <input
             id="chatbot-input"
             #inputEl
@@ -293,7 +314,7 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
       align-items: center;
       gap: 0.35rem;
     }
-    .chat-close, .chat-clear-btn {
+    .chat-close, .chat-clear-btn, .chat-action-btn {
       width: 32px;
       height: 32px;
       border-radius: 8px;
@@ -306,9 +327,11 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
       justify-content: center;
       transition: all 0.15s;
     }
-    .chat-close svg, .chat-clear-btn svg { width: 14px; height: 14px; }
+    .chat-close svg, .chat-clear-btn svg, .chat-action-btn svg { width: 14px; height: 14px; }
     .chat-close:hover { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
     .chat-clear-btn:hover { background: rgba(245,158,11,0.15); color: #fbbf24; border-color: rgba(245,158,11,0.3); }
+    .chat-action-btn:hover { background: rgba(52,211,153,0.15); color: #34d399; border-color: rgba(52,211,153,0.3); }
+    .chat-action-btn.muted { color: #f87171; }
 
     /* ── Mode Toggle ── */
     .mode-toggle {
@@ -558,6 +581,34 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
     }
     .chat-input:disabled { opacity: 0.5; cursor: not-allowed; }
 
+    .mic-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .mic-btn svg { width: 16px; height: 16px; }
+    .mic-btn:hover { color: #fff; background: rgba(255,255,255,0.12); }
+    .mic-btn.listening {
+      background: rgba(239,68,68,0.15);
+      border-color: rgba(239,68,68,0.4);
+      color: #f87171;
+      animation: mic-pulse 1.5s infinite;
+    }
+    @keyframes mic-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+      70% { box-shadow: 0 0 0 8px rgba(239,68,68,0); }
+      100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+    }
+
     .send-btn {
       width: 38px;
       height: 38px;
@@ -588,15 +639,21 @@ import { ChatbotService, ChatMessage } from '../../services/chatbot.service';
     }
   `]
 })
-export class ChatbotComponent implements AfterViewChecked {
+export class ChatbotComponent implements AfterViewChecked, OnInit {
   chatbot = inject(ChatbotService);
+  private langService = inject(LanguageService);
 
   isOpen = signal(false);
   isTyping = signal(false);
+  isListening = signal(false);
   messages = signal<ChatMessage[]>([]);
   userInput = '';
   apiKeyInput = '';
   isSavingKey = false;
+  ttsEnabled = signal(true); // Voice output built-in toggle
+
+  private recognition: any = null;
+  private voiceTimer: any = null;
 
   quickChips = ['📚 Library stats', '📖 What am I reading?', '💡 Recommend something', '⏰ Overdue loans'];
 
@@ -604,6 +661,73 @@ export class ChatbotComponent implements AfterViewChecked {
   @ViewChild('inputEl') private inputEl!: ElementRef<HTMLInputElement>;
 
   private shouldScroll = false;
+
+  ngOnInit() {
+    this.initSpeechRecognition();
+  }
+
+  private initSpeechRecognition() {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      this.recognition = new SpeechRecognition();
+      this.recognition.continuous = false;
+      this.recognition.interimResults = true;
+
+      this.recognition.onresult = (event: any) => {
+        let finalTranscript = '';
+        let interimTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+
+        // Prefer final, but fallback to interim to show typed text in real time
+        if (finalTranscript || interimTranscript) {
+          this.userInput = finalTranscript || interimTranscript;
+        }
+      };
+
+      this.recognition.onend = () => {
+        this.isListening.set(false);
+        // Auto-send after a 2-second gap when the user stops speaking
+        if (this.userInput.trim() && !this.isTyping()) {
+          this.voiceTimer = setTimeout(() => {
+            if (this.userInput.trim() && !this.isTyping()) {
+              this.sendMessage();
+            }
+          }, 2000);
+        }
+      };
+
+      this.recognition.onerror = (event: any) => {
+        console.error('Speech recognition error', event.error);
+        this.isListening.set(false);
+      };
+    }
+  }
+
+  toggleVoiceInput() {
+    if (!this.recognition) {
+      alert("Your browser does not support Voice Dictation. Try modern Chrome or Safari.");
+      return;
+    }
+
+    if (this.isListening()) {
+      this.recognition.stop();
+      this.isListening.set(false);
+      if (this.voiceTimer) clearTimeout(this.voiceTimer);
+    } else {
+      // Configure language based on current toggle state
+      this.recognition.lang = this.langService.isBengali ? 'bn-IN' : 'en-US';
+      this.userInput = ''; // clear input before listening
+      this.recognition.start();
+      this.isListening.set(true);
+      setTimeout(() => this.inputEl?.nativeElement.focus(), 50);
+    }
+  }
 
   ngAfterViewChecked() {
     if (this.shouldScroll) {
@@ -614,6 +738,12 @@ export class ChatbotComponent implements AfterViewChecked {
 
   toggleChat() {
     this.isOpen.update(v => !v);
+
+    // Cancel speech when closing
+    if (!this.isOpen() && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
     if (this.isOpen() && this.messages().length === 0) {
       if (this.chatbot.isOfflineMode()) {
         this.pushBotMessage(`📴 **Offline Mode** active. I can instantly answer simple questions about your library like:\n\n_"How many books do I have?"_\n_"What am I reading?"_`);
@@ -679,6 +809,13 @@ export class ChatbotComponent implements AfterViewChecked {
   }
 
   sendMessage() {
+    if (this.isListening()) {
+      this.recognition?.stop();
+    }
+    if (this.voiceTimer) {
+      clearTimeout(this.voiceTimer);
+    }
+
     const text = this.userInput.trim();
     if (!text || this.isTyping()) return;
 
@@ -701,6 +838,34 @@ export class ChatbotComponent implements AfterViewChecked {
   private pushBotMessage(text: string) {
     this.messages.update(msgs => [...msgs, { role: 'bot', text, timestamp: new Date() }]);
     this.shouldScroll = true;
+    this.speakResponse(text);
+  }
+
+  toggleTTS() {
+    this.ttsEnabled.update(v => !v);
+    if (!this.ttsEnabled() && window.speechSynthesis) {
+      window.speechSynthesis.cancel(); // Stop talking if muted while speaking
+    }
+  }
+
+  private speakResponse(text: string) {
+    if (!this.ttsEnabled() || !window.speechSynthesis) return;
+    
+    // Stop any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    // Quick sanitize to remove markdown (bold, italic, bullets, emojis) for nicer voice output
+    const cleanText = text
+      .replace(/\*\*/g, '')
+      .replace(/_/g, '')
+      .replace(/#+\s/g, '')
+      .replace(/-\s/g, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // remove markdown links, keep text
+      .trim();
+
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.lang = this.langService.isBengali ? 'bn-IN' : 'en-US';
+    window.speechSynthesis.speak(utterance);
   }
 
   private scrollToBottom() {

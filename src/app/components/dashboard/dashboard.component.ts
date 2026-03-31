@@ -157,7 +157,10 @@ import { LanguageService } from '../../services/language.service';
       <div *ngIf="filteredBooks().length === 0" class="empty-state">
         <div class="empty-icon">🔍</div>
         <p *ngIf="searchQuery() || hasActiveFilters()">{{ langService.t('dash.noMatchFilter') }}</p>
-        <p *ngIf="!searchQuery() && !hasActiveFilters()">{{ langService.t('dash.noMatch') }}</p>
+        <div *ngIf="!searchQuery() && !hasActiveFilters()">
+          <h3 style="margin-bottom: 0.5rem; color: var(--text-main);">Use the Import option to quickly add a large collection of books.</h3>
+          <p>{{ langService.t('dash.noMatch') }}</p>
+        </div>
         <div class="empty-actions">
           <button *ngIf="hasActiveFilters() || searchQuery()" class="btn-ghost" (click)="clearAll(); onSearch('')">{{ langService.t('dash.clearAllFilters') }}</button>
           <a *ngIf="activeStatus() === 'All Books' && !searchQuery() && !hasActiveFilters()" routerLink="/add" class="link">{{ langService.t('dash.addFirst') }}</a>

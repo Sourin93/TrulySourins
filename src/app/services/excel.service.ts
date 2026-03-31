@@ -63,6 +63,39 @@ export class ExcelService {
         XLSX.writeFile(wb, `books-${today}.xlsx`);
     }
 
+    // ── Template ──────────────────────────────────────────────────────────────────
+
+    downloadTemplate(): void {
+        const sampleRow = {
+            'Title': 'The Hobbit',
+            'Author': 'J.R.R. Tolkien',
+            'Status': 'Wishlist',
+            'Genre': 'Fantasy',
+            'Category': 'Novel',
+            'Language': 'English',
+            'Borrowed By': '',
+            'Borrowed From': '',
+            'Lent Date': '',
+            'Cover URL': '',
+            'Feedback': '',
+            'Added Date': new Date().toISOString()
+        };
+
+        const ws = XLSX.utils.json_to_sheet([sampleRow]);
+
+        // Widen columns for readability
+        ws['!cols'] = [
+            { wch: 40 }, { wch: 25 }, { wch: 15 }, { wch: 18 }, { wch: 18 },
+            { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 20 }, { wch: 40 },
+            { wch: 50 }, { wch: 25 }
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Template');
+
+        XLSX.writeFile(wb, 'book-import-template.xlsx');
+    }
+
     // ── Import ──────────────────────────────────────────────────────────────────
 
     import(file: File): Promise<{ books: Book[]; skippedMessages: string[] }> {
